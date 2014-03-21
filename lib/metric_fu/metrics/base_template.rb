@@ -28,7 +28,13 @@ module MetricFu
     def erbify(section)
       template_file = template(section)
       erb           = erb_template_source(template_file)
-      erb.result(binding)
+      begin
+        erb.result(binding)
+      rescue ArgumentError => e
+        #hack for strange UTF8 conversion issues (e.g. Mac vs Linux etc.): convert to and from UTF8 and try again
+        self.instance_variable_get('@data').each { |code| code.encode!('UTF-8','UTF-8') }
+        erb.result(binding)
+      end
     rescue => e
       message = "Error: #{e.class}; message #{e.message}. "
       message << "Failed evaluating erb template "
